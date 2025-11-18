@@ -1,48 +1,64 @@
 """
-Database Schemas
+Database Schemas for E‑Learning Platform
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
+Each Pydantic model corresponds to a MongoDB collection.
+Collection name is the lowercase of the class name.
 
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Examples:
+- User -> "user"
+- Course -> "course"
+- Lesson -> "lesson"
+- Enrollment -> "enrollment"
+- Review -> "review"
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 
-# Example schemas (replace with your own):
 
 class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
+    """Basic user schema"""
     name: str = Field(..., description="Full name")
     email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+    avatar_url: Optional[str] = Field(None, description="Public avatar URL")
+    is_instructor: bool = Field(False, description="Whether the user can create courses")
 
-class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
 
-# Add your own schemas here:
-# --------------------------------------------------
+class Course(BaseModel):
+    """Courses collection schema"""
+    title: str = Field(..., description="Course title")
+    subtitle: Optional[str] = Field(None, description="Short subtitle or tagline")
+    description: str = Field(..., description="Full course description")
+    instructor_name: str = Field(..., description="Instructor display name")
+    instructor_email: str = Field(..., description="Instructor contact email")
+    price: float = Field(0.0, ge=0, description="Price in USD (0 for free)")
+    thumbnail_url: Optional[str] = Field(None, description="Thumbnail image URL")
+    tags: List[str] = Field(default_factory=list, description="Searchable tags")
+    language: str = Field("English", description="Course language")
+    level: str = Field("Beginner", description="Skill level")
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+
+class Lesson(BaseModel):
+    """Lessons collection schema"""
+    course_id: str = Field(..., description="ID of the parent course (stringified ObjectId)")
+    title: str = Field(..., description="Lesson title")
+    content: str = Field(..., description="Lesson content (markdown or text)")
+    video_url: Optional[str] = Field(None, description="Optional video URL")
+    order: int = Field(0, ge=0, description="Order within the course")
+
+
+class Enrollment(BaseModel):
+    """Enrollments collection schema"""
+    course_id: str = Field(..., description="ID of the course (stringified ObjectId)")
+    user_email: str = Field(..., description="Email of the enrolled user")
+    user_name: str = Field(..., description="Name of the enrolled user")
+    progress: float = Field(0, ge=0, le=100, description="Completion percentage")
+
+
+class Review(BaseModel):
+    """Course reviews"""
+    course_id: str = Field(..., description="ID of the course (stringified ObjectId)")
+    user_email: str = Field(..., description="Reviewer email")
+    user_name: str = Field(..., description="Reviewer name")
+    rating: int = Field(..., ge=1, le=5, description="Star rating 1-5")
+    comment: Optional[str] = Field(None, description="Optional review text")
